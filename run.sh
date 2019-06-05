@@ -2,12 +2,20 @@
 
 # run.sh
 
+# --
+# Setup
+
 source activate pytorch_p36
 cd ~/software/parlai
 
-mkdir -p experiments
+pip uninstall parlai -y
+pip install -e .
 
-OUTPATH="./experiments/v2-nolinear"
+# --
+# Run
+
+mkdir -p experiments
+OUTPATH="./experiments/nolinear-nopatience"
 rm -rf $OUTPATH && mkdir -p $OUTPATH
 python -u parlai/scripts/train_model.py \
     --task              convai2                       \
@@ -74,20 +82,16 @@ cat experiments/v2-nolinear/my_model.trainstats | jq -rc '.valid_reports | .[]'
 # {"exs":7801,"accuracy":0.828,"f1":0.847,"hits@1":0.828,"hits@5":0.977,"hits@10":0.994,"hits@100":1,"bleu":0.8278,"lr":3.2e-06,"num_updates":2570,"examples":7801,"loss":21.3,"mean_loss":0.00273,"mean_rank":1.43,"mrr":0.8919,"train_time":5033.247322559357}
 # {"exs":7801,"accuracy":0.8289,"f1":0.8479,"hits@1":0.829,"hits@5":0.977,"hits@10":0.995,"hits@100":1,"bleu":0.8287,"lr":1.28e-06,"num_updates":2827,"examples":7801,"loss":21.37,"mean_loss":0.00274,"mean_rank":1.429,"mrr":0.8923,"train_time":5536.921379566193}
 
+# --------------------------------------------------------------------------------
+# # Notes
+#     `helpers.sh` says `--num-epochs 3`, but lets just let run
+#     Paper says batchsize of 512 is best, but I'm getting OOM errors
+#     256 and 128 are worse (83.4 to 83.0 or 82.3), but not substantially
 
-# `helpers.sh` says `--num-epochs 3`, but lets just let run
-# Paper says batchsize of 512 is best, but I'm getting OOM errors
-# 256 and 128 are worse (83.4 to 83.0 or 82.3), but not substantially
+#     Params in top block shouldn't make a difference
+#     Most uncertain about 
+#       --lr-scheduler-patience -- maybe should be 0
 
-# Params in top block shouldn't make a difference
-# Most uncertain about 
-#   --lr-scheduler-patience -- maybe should be 0
-
-# stephenroller says:
-# -cands batch -ecands inline
-# but these are set by default
-
-
-python -u parlai/scripts/train_model.py -candidates
-
-# !! Need more logging during evaluation
+#     stephenroller says:
+#     -cands batch -ecands inline
+#     but these are set by default
