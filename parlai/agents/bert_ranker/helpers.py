@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+# >>
+import os
+assert 'DO_ADDITIONAL_LINEAR_LAYER' in os.environ
+DO_ADDITIONAL_LINEAR_LAYER = os.environ['DO_ADDITIONAL_LINEAR_LAYER'] == 1
+print("DO_ADDITIONAL_LINEAR_LAYER=%d" % DO_ADDITIONAL_LINEAR_LAYER, file=sys.stderr)
+# <<
+
 # Copyright (c) Facebook, Inc. and its affiliates.
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -74,7 +81,8 @@ class BertWrapper(torch.nn.Module):
 
     def __init__(self, bert_model, output_dim,
                  add_transformer_layer=False, layer_pulled=-1,
-                 aggregation="first"):
+                 aggregation="first", do_additional_linear_layer=DO_ADDITIONAL_LINEAR_LAYER):
+        
         super(BertWrapper, self).__init__()
         self.layer_pulled = layer_pulled
         self.aggregation = aggregation
@@ -89,6 +97,7 @@ class BertWrapper(torch.nn.Module):
             self.additional_transformer_layer = BertLayer(config_for_one_layer)
         self.additional_linear_layer = torch.nn.Linear(bert_output_dim, output_dim)
         self.bert_model = bert_model
+        self.do_additional_linear_layer = do_additional_linear_layer
 
     def forward(self, token_ids, segment_ids, attention_mask):
         output_bert, output_pooler = self.bert_model(
@@ -125,8 +134,11 @@ class BertWrapper(torch.nn.Module):
             embeddings = embedding_layer[:, 0, :]
 
         # We need this in case of dimensionality reduction
-        result = self.additional_linear_layer(embeddings)
-
+        if self.do_additional_linear_layer:
+            result = self.additional_linear_layer(embeddings)
+        else:
+            result = embeddings
+            
         # Sort of hack to make it work with distributed: this way the pooler layer
         # is used for grad computation, even though it does not change anything...
         # in practice, it just adds a very (768*768) x (768*batchsize) matmul
