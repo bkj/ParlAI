@@ -5,11 +5,10 @@
 # --
 # Setup
 
-source activate pytorch_p36
-cd ~/software/parlai
-
-pip uninstall parlai -y
-pip install -e .
+# source activate pytorch_p36
+# cd ~/software/parlai
+# pip uninstall parlai -y
+# pip install -e .
 
 # --
 # Run

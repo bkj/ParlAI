@@ -49,7 +49,7 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
     def build_model(self):
         self.model = BertWrapper(
             BertModel.from_pretrained(self.pretrained_path),
-            1,
+            mode='cross_encoder',
             add_transformer_layer=self.opt['add_transformer_layer'],
             layer_pulled=self.opt['pull_from_layer'],
             aggregation=self.opt['bert_aggregation']
@@ -64,21 +64,30 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
     def score_candidates(self, batch, cand_vecs, cand_encs=None):
         # concatenate text and candidates (not so easy)
         # unpad and break
-        nb_cands = cand_vecs.size()[1]
+        
+        nb_cands   = cand_vecs.size()[1]
         size_batch = cand_vecs.size()[0]
-        text_vec = batch.text_vec
-        tokens_context = text_vec.unsqueeze(
-            1).expand(-1, nb_cands, -1).contiguous().view(nb_cands * size_batch, -1)
+        text_vec   = batch.text_vec
+        
+        tokens_context   = text_vec.unsqueeze(1).expand(-1, nb_cands, -1).contiguous().view(nb_cands * size_batch, -1)
         segments_context = tokens_context * 0
-
+        
         # remove the start token ["CLS"] from candidates
-        tokens_cands = cand_vecs.view(nb_cands * size_batch, -1)
+        tokens_cands   = cand_vecs.view(nb_cands * size_batch, -1)
         segments_cands = tokens_cands * 0 + 1
-        all_tokens = torch.cat([tokens_context, tokens_cands], 1)
+        
+        all_tokens   = torch.cat([tokens_context, tokens_cands], 1)
         all_segments = torch.cat([segments_context, segments_cands], 1)
-        all_mask = (all_tokens != self.NULL_IDX)
+        all_mask     = (all_tokens != self.NULL_IDX)
         all_tokens *= all_mask.long()
+        
         scores = self.model(all_tokens, all_segments, all_mask)
+        
+        # >>
+        print('scores.shape', scores.shape)
+        print('(size_batch, nb_cands)', (size_batch, nb_cands))
+        # <<
+        
         return scores.view(size_batch, nb_cands)
 
     @staticmethod

@@ -72,24 +72,27 @@ class BertWrapper(torch.nn.Module):
     """ Adds a optional transformer layer and a linear layer on top of BERT.
     """
 
-    def __init__(self, bert_model, output_dim,
-                 add_transformer_layer=False, layer_pulled=-1,
-                 aggregation="first"):
-        super(BertWrapper, self).__init__()
-        self.layer_pulled = layer_pulled
-        self.aggregation = aggregation
+    def __init__(self, bert_model, mode, add_transformer_layer=False, layer_pulled=-1, aggregation="first"):
+        
+        super().__init__()
+        
+        self.layer_pulled          = layer_pulled
+        self.aggregation           = aggregation
         self.add_transformer_layer = add_transformer_layer
-        # deduce bert output dim from the size of embeddings
+        
         bert_output_dim = bert_model.embeddings.word_embeddings.weight.size(1)
-
+        
         if add_transformer_layer:
             config_for_one_layer = BertConfig(
                 0, hidden_size=bert_output_dim, num_attention_heads=int(
                     bert_output_dim / 64), intermediate_size=3072, hidden_act='gelu')
             self.additional_transformer_layer = BertLayer(config_for_one_layer)
-# >> BKJ
-#        self.additional_linear_layer = torch.nn.Linear(bert_output_dim, output_dim)
-# <<
+        
+        assert mode in ['bi_encoder', 'cross_encoder']
+        if mode == 'cross_encoder':
+            print('BertWrapper (cross_encoder): adding linear output_linear')
+            self.output_linear = torch.nn.Linear(bert_output_dim, 1)
+        
         self.bert_model = bert_model
 
     def forward(self, token_ids, segment_ids, attention_mask):
@@ -129,9 +132,10 @@ class BertWrapper(torch.nn.Module):
         # We need this in case of dimensionality reduction
 
 # >> BKJ
-        # result = self.additional_linear_layer(embeddings)
-# --
-        result = embeddings
+        if self.output_linear is not None:
+            result = self.output_linear(embeddings)
+        else:
+            result = embeddings
 # <<
 
         # Sort of hack to make it work with distributed: this way the pooler layer

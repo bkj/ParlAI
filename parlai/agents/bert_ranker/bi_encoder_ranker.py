@@ -32,8 +32,7 @@ class BiEncoderRankerAgent(TorchRankerAgent):
     def __init__(self, opt, shared=None):
         # download pretrained models
         download(opt['datapath'])
-        self.pretrained_path = os.path.join(opt['datapath'], 'models',
-                                            'bert_models', MODEL_PATH)
+        self.pretrained_path = os.path.join(opt['datapath'], 'models', 'bert_models', MODEL_PATH)
         opt['pretrained_path'] = self.pretrained_path
 
         self.clip = -1
@@ -195,14 +194,14 @@ class BiEncoderModule(torch.nn.Module):
         super(BiEncoderModule, self).__init__()
         self.context_encoder = BertWrapper(
             BertModel.from_pretrained(opt['pretrained_path']),
-            opt['out_dim'],
+            mode='bi_encoder',
             add_transformer_layer=opt['add_transformer_layer'],
             layer_pulled=opt['pull_from_layer'],
             aggregation=opt['bert_aggregation']
         )
         self.cand_encoder = BertWrapper(
             BertModel.from_pretrained(opt['pretrained_path']),
-            opt['out_dim'],
+            mode='bi_encoder',
             add_transformer_layer=opt['add_transformer_layer'],
             layer_pulled=opt['pull_from_layer'],
             aggregation=opt['bert_aggregation']
