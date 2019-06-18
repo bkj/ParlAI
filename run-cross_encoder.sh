@@ -1,4 +1,4 @@
-#!/bin/bhas
+#!/bin/bash
 
 # run-cross_encoder.sh
 
@@ -16,17 +16,17 @@ python -u parlai/scripts/train_model.py                  \
     --log_every_n_secs  10                               \
     --eval-batchsize    16                               \
     --data-parallel     true                             \
-    --type-optimization         all_encoder_layers \
-    --batchsize                 16                 \
-    --learningrate              5e-5               \
-    --history-size              20                 \
-    --label-truncate            72                 \
-    --text-truncate             360                \
-    --lr-scheduler              reduceonplateau    \
-    --lr-scheduler-patience     0                  \
-    --lr-scheduler-decay        0.4                \
-    --validation-every-n-epochs 0.5                \
-    --warmup_updates            1000               \
+    --type-optimization         all_encoder_layers       \
+    --batchsize                 16                       \
+    --learningrate              5e-5                     \
+    --history-size              20                       \
+    --label-truncate            72                       \
+    --text-truncate             360                      \
+    --lr-scheduler              reduceonplateau          \
+    --lr-scheduler-patience     0                        \
+    --lr-scheduler-decay        0.4                      \
+    --validation-every-n-epochs 0.5                      \
+    --warmup_updates            1000                     \
     --fp16                      true
 
 # "batch size fixed at 16 and provide as negatives random samples from the training set"

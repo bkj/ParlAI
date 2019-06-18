@@ -79,6 +79,7 @@ class BertWrapper(torch.nn.Module):
         self.layer_pulled          = layer_pulled
         self.aggregation           = aggregation
         self.add_transformer_layer = add_transformer_layer
+        self.bert_model            = bert_model
         
         bert_output_dim = bert_model.embeddings.word_embeddings.weight.size(1)
         
@@ -88,16 +89,16 @@ class BertWrapper(torch.nn.Module):
                     bert_output_dim / 64), intermediate_size=3072, hidden_act='gelu')
             self.additional_transformer_layer = BertLayer(config_for_one_layer)
         
+        # Possibly add final linear layer
+        self.output_linear = None
         assert mode in ['bi_encoder', 'cross_encoder']
         if mode == 'cross_encoder':
             print('BertWrapper (cross_encoder): adding linear output_linear')
             self.output_linear = torch.nn.Linear(bert_output_dim, 1)
-        
-        self.bert_model = bert_model
-
+    
     def forward(self, token_ids, segment_ids, attention_mask):
-        output_bert, output_pooler = self.bert_model(
-            token_ids, segment_ids, attention_mask)
+        output_bert, output_pooler = self.bert_model(token_ids, segment_ids, attention_mask)
+        
         # output_bert is a list of 12 (for bert base) layers.
         layer_of_interest = output_bert[self.layer_pulled]
         dtype = next(self.parameters()).dtype
@@ -111,7 +112,7 @@ class BertWrapper(torch.nn.Module):
                 layer_of_interest, extended_attention_mask)
         else:
             embedding_layer = layer_of_interest
-
+        
         if self.aggregation == "mean":
             #  consider the average of all the output except CLS.
             # obviously ignores masked elements
@@ -120,17 +121,17 @@ class BertWrapper(torch.nn.Module):
             sumed_embeddings = torch.sum(outputs_of_interest * mask, dim=1)
             nb_elems = torch.sum(attention_mask[:, 1:].type(dtype), dim=1).unsqueeze(1)
             embeddings = sumed_embeddings / nb_elems
+            
         elif self.aggregation == "max":
             #  consider the max of all the output except CLS
             outputs_of_interest = embedding_layer[:, 1:, :]
             mask = (~attention_mask[:, 1:]).type(dtype).unsqueeze(2) * neginf(dtype)
             embeddings, _ = torch.max(outputs_of_interest + mask, dim=1)
+            
         else:
             # easiest, we consider the output of "CLS" as the embedding
             embeddings = embedding_layer[:, 0, :]
-
-        # We need this in case of dimensionality reduction
-
+            
 # >> BKJ
         if self.output_linear is not None:
             result = self.output_linear(embeddings)
