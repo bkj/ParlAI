@@ -29,22 +29,25 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
         )
 
     def __init__(self, opt, shared=None):
-        # download pretrained models
         download(opt['datapath'])
-        self.pretrained_path = os.path.join(opt['datapath'], 'models',
-                                            'bert_models', MODEL_PATH)
-
+        
+        self.pretrained_path = os.path.join(opt['datapath'], 'models', 'bert_models', MODEL_PATH)
+        
         super().__init__(opt, shared)
+        
         # it's easier for now to use DataParallel when
         self.data_parallel = opt.get('data_parallel') and self.use_cuda
         if self.data_parallel:
             self.model = torch.nn.DataParallel(self.model)
+        
         if is_distributed():
             raise ValueError('Cannot combine --data-parallel and distributed mode')
+        
         self.clip = -1
-        self.NULL_IDX = self.dict.pad_idx
+        
+        self.NULL_IDX  = self.dict.pad_idx
         self.START_IDX = self.dict.start_idx
-        self.END_IDX = self.dict.end_idx
+        self.END_IDX   = self.dict.end_idx
 
     def build_model(self):
         self.model = BertWrapper(
@@ -56,11 +59,13 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
         )
 
     def init_optim(self, params, optim_states=None, saved_optim_type=None):
-        self.optimizer = get_bert_optimizer([self.model],
-                                            self.opt['type_optimization'],
-                                            self.opt['learningrate'],
-                                            fp16=self.opt.get('fp16'))
-
+        self.optimizer = get_bert_optimizer(
+            [self.model],
+            self.opt['type_optimization'],
+            self.opt['learningrate'],
+            fp16=self.opt.get('fp16')
+        )
+        
     def score_candidates(self, batch, cand_vecs, cand_encs=None):
         # concatenate text and candidates (not so easy)
         # unpad and break
@@ -83,11 +88,6 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
         
         scores = self.model(all_tokens, all_segments, all_mask)
         
-        # >>
-        print('scores.shape', scores.shape)
-        print('(size_batch, nb_cands)', (size_batch, nb_cands))
-        # <<
-        
         return scores.view(size_batch, nb_cands)
 
     @staticmethod
@@ -96,8 +96,7 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
 
     def _set_text_vec(self, *args, **kwargs):
         obs = super()._set_text_vec(*args, **kwargs)
-        # concatenate the [CLS] and [SEP] tokens
         if obs is not None and 'text_vec' in obs:
-            obs['text_vec'] = surround(obs['text_vec'], self.START_IDX,
-                                       self.END_IDX)
+            obs['text_vec'] = surround(obs['text_vec'], self.START_IDX, self.END_IDX)
+        
         return obs
