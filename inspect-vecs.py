@@ -8,11 +8,11 @@ from itertools import chain
 # --
 # IO
 
-ctx_emb = torch.load('_all_ctx_emb.83f69181-220d-404d-a9a8-223f2c466e02')
-ctx_txt = torch.load('_all_ctx_txt.83f69181-220d-404d-a9a8-223f2c466e02')
+ctx_emb = torch.load('experiments/bi_encoder/v0/vecs/_all_ctx_emb.83f69181-220d-404d-a9a8-223f2c466e02')
+ctx_txt = torch.load('experiments/bi_encoder/v0/vecs/_all_ctx_txt.83f69181-220d-404d-a9a8-223f2c466e02')
 
-cnd_emb = torch.load('_all_cnd_emb.83f69181-220d-404d-a9a8-223f2c466e02')
-cnd_txt = torch.load('_all_cnd_txt.83f69181-220d-404d-a9a8-223f2c466e02')
+cnd_emb = torch.load('experiments/bi_encoder/v0/vecs/_all_cnd_emb.83f69181-220d-404d-a9a8-223f2c466e02')
+cnd_txt = torch.load('experiments/bi_encoder/v0/vecs/_all_cnd_txt.83f69181-220d-404d-a9a8-223f2c466e02')
 
 # --
 # Format
