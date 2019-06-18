@@ -72,9 +72,11 @@ def eval_model(opt, printargs=None, print_parser=None):
         # Show arguments after loading model
         print_parser.opt = agent.opt
         print_parser.print_args()
+    
     log_every_n_secs = opt.get('log_every_n_secs', -1)
     if log_every_n_secs <= 0:
         log_every_n_secs = float('inf')
+    
     log_time = TimeLogger()
 
     # Show some example dialogs:
@@ -86,20 +88,22 @@ def eval_model(opt, printargs=None, print_parser=None):
             print(world.display() + "\n~~")
         if log_time.time() > log_every_n_secs:
             report = world.report()
-            text, report = log_time.log(report['exs'], world.num_examples(),
-                                        report)
+            text, report = log_time.log(report['exs'], world.num_examples(), report)
             print(text)
+        
         if opt['num_examples'] > 0 and cnt >= opt['num_examples']:
             break
+    
     if world.epoch_done():
         print("EPOCH DONE")
-    print('finished evaluating task {} using datatype {}'.format(
-          opt['task'], opt.get('datatype', 'N/A')))
+    
+    print('finished evaluating task {} using datatype {}'.format(opt['task'], opt.get('datatype', 'N/A')))
+    
     report = world.report()
     print(report)
-
+    
     print_announcements(opt)
-
+    
     return report
 
 
